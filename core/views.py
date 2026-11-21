@@ -8,7 +8,7 @@ DEMO_USER = {
     "username": "alex", "nickname": "Алексей", "email": "alex@example.com",
     "avatar": "core/img/avatar-1.svg",
 }
-DEMO_MESSAGE = "Форма проверена. В ДЗ2 данные пока не сохраняются."
+DEMO_MESSAGE = "Форма проверена. Сайт работает в режиме чтения."
 
 
 def render_form_page(request, template, form_class, *, initial=None, demo_profile=False):

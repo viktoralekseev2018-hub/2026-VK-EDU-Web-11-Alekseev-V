@@ -1,8 +1,5 @@
-from questions.data import MEMBERS, QUESTIONS, TAGS
+from questions.models import Question, Tag
 
 
 def sidebar(request):
-    return {
-        "popular_tags": [{"name": tag, "count": sum(tag in q["tags"] for q in QUESTIONS)} for tag in TAGS],
-        "best_members": MEMBERS,
-    }
+    return {"popular_tags": Tag.objects.popular(), "best_members": Question.objects.top_authors()}

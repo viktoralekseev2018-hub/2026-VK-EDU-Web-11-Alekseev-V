@@ -6,6 +6,6 @@
 {% for question in page_obj %}
   {% include 'questions/includes/question_card.html' %}
 {% empty %}
-  <div class="alert alert-secondary">Вопросов не найдено. <a href="{% url 'questions:index' %}">Все вопросы</a></div>
+  <div class="alert alert-secondary">{% if search_query %}По этому запросу вопросов не найдено.{% elif tag_name %}Вопросов с этим тегом пока нет.{% else %}Пока нет ни одного вопроса.{% endif %} <a href="{% url 'questions:index' %}">Все вопросы</a></div>
 {% endfor %}
 {% include 'core/includes/pagination.html' with pagination_label='вопросов' %}
