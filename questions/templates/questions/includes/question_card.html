@@ -12,8 +12,8 @@
       {% else %}
         <h2 class="h5"><a href="{{ question.get_absolute_url }}">{{ question.title }}</a></h2>
       {% endif %}
-      <p>{{ question.text }}</p>
-      <p class="small text-secondary">{{ question.author.get_full_name|default:question.author.username }} · <time datetime="{{ question.created_at|date:'c' }}">{{ question.created_at|date:'d.m.Y H:i' }}</time></p>
+      <p class="publication-text">{{ question.text }}</p>
+      <p class="small text-secondary">{{ question.author.profile.nickname|default:question.author.get_full_name|default:question.author.username }} · <time datetime="{{ question.created_at|date:'c' }}">{{ question.created_at|date:'d.m.Y H:i' }}</time></p>
       <div class="d-flex flex-wrap align-items-center gap-2">
         <a href="{{ question.get_absolute_url }}#answers">Ответов: {{ question.answers_count }}</a>
         <span class="small">Теги:</span>

@@ -13,6 +13,13 @@
   </section>
   <section class="form-page mt-4" aria-labelledby="answer-form-title">
     <h2 class="h4 mb-3" id="answer-form-title">Ваш ответ</h2>
-    {% include 'core/includes/form.html' with submit_label='Ответить' %}
+    {% if user.is_authenticated %}
+      {% include 'core/includes/form.html' with submit_label='Ответить' %}
+    {% else %}
+      <p><a href="{% url 'core:login' %}?next={{ request.get_full_path|urlencode:'' }}">Войдите, чтобы ответить</a>.</p>
+      <span tabindex="0" title="Войдите, чтобы ответить">
+        <button class="btn btn-primary" type="button" disabled>Ответить</button>
+      </span>
+    {% endif %}
   </section>
 {% endblock %}

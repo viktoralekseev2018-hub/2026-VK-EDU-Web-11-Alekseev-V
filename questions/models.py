@@ -101,6 +101,14 @@ class Answer(Publication):
     def __str__(self):
         return self.text[:80]
 
+    def url_on_page(self, per_page):
+        earlier = Q(created_at__lt=self.created_at) | Q(created_at=self.created_at, pk__lt=self.pk)
+        before = Q(is_correct=self.is_correct) & earlier
+        if not self.is_correct:
+            before |= Q(is_correct=True)
+        position = self.question.answers.filter(before).count()
+        return f"{self.question.get_absolute_url()}?page={position // per_page + 1}#answer-{self.pk}"
+
 
 class QuestionLike(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")

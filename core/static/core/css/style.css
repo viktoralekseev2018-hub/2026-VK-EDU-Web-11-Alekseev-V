@@ -50,3 +50,11 @@ body {
     height: 48px;
   }
 }
+.publication-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+[id^="answer-"]:target {
+  border-color: var(--bs-primary);
+}
