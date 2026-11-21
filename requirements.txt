@@ -6,3 +6,4 @@ tzdata==2026.6
 Faker==40.63.0
 psycopg[binary]==3.3.9
 django-debug-toolbar==8.0.0
+Pillow==13.0.0

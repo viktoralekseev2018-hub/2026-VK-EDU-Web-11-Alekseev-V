@@ -4,6 +4,7 @@
   <div class="card-body d-flex align-items-start gap-3">
     <div class="question-user">
       <img class="avatar rounded" src="{{ question.author.profile.avatar_url|default:default_avatar }}" alt="Аватар {{ question.author.username }}">
+      {% url 'questions:ajax_question_vote' question.id as vote_url %}
       {% include 'questions/includes/vote.html' with item=question %}
     </div>
     <div class="question-content flex-grow-1">
@@ -12,8 +13,8 @@
       {% else %}
         <h2 class="h5"><a href="{{ question.get_absolute_url }}">{{ question.title }}</a></h2>
       {% endif %}
-      <p>{{ question.text }}</p>
-      <p class="small text-secondary">{{ question.author.get_full_name|default:question.author.username }} · <time datetime="{{ question.created_at|date:'c' }}">{{ question.created_at|date:'d.m.Y H:i' }}</time></p>
+      <p class="publication-text">{{ question.text }}</p>
+      <p class="small text-secondary">{{ question.author.profile.nickname|default:question.author.get_full_name|default:question.author.username }} · <time datetime="{{ question.created_at|date:'c' }}">{{ question.created_at|date:'d.m.Y H:i' }}</time></p>
       <div class="d-flex flex-wrap align-items-center gap-2">
         <a href="{{ question.get_absolute_url }}#answers">Ответов: {{ question.answers_count }}</a>
         <span class="small">Теги:</span>

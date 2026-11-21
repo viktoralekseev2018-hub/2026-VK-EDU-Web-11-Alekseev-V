@@ -1,44 +1,58 @@
-from django.shortcuts import render
-from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+from django.contrib.auth import login as sign_in, logout as sign_out
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_http_methods, require_POST
+from django.views.csrf import csrf_failure as default_csrf_failure
 
 from .forms import LoginForm, ProfileForm, SignupForm
-
-DEMO_USER = {
-    "username": "alex", "nickname": "Алексей", "email": "alex@example.com",
-    "avatar": "core/img/avatar-1.svg",
-}
-DEMO_MESSAGE = "Форма проверена. Сайт работает в режиме чтения."
+from .models import Profile
 
 
-def render_form_page(request, template, form_class, *, initial=None, demo_profile=False):
-    form = form_class(
-        request.POST if request.method == "POST" else None,
-        request.FILES if request.method == "POST" else None,
-        initial=initial,
-    )
-    valid = request.method == "POST" and form.is_valid()
-    return render(request, template, {
-        "form": form,
-        "form_action": reverse(request.resolver_match.view_name),
-        "demo_message": DEMO_MESSAGE if valid else "",
-        "demo_profile": demo_profile,
-        "demo_user": DEMO_USER,
-    })
-
-
-@require_http_methods(["GET", "POST"])
-def login(request):
-    return render_form_page(request, "core/login.html", LoginForm)
+class SignInView(LoginView):
+    template_name = "core/login.html"
+    authentication_form = LoginForm
 
 
 @require_http_methods(["GET", "POST"])
 def signup(request):
-    return render_form_page(request, "core/signup.html", SignupForm)
+    form = SignupForm(request.POST if request.method == "POST" else None)
+    if form.is_valid():
+        sign_in(request, form.save())
+        return redirect("questions:index")
+    return render(request, "core/signup.html", {"form": form})
 
 
+@login_required
+@require_POST
+def logout(request):
+    destination = request.POST.get("next", "")
+    sign_out(request)
+    if url_has_allowed_host_and_scheme(destination, {request.get_host()}, require_https=request.is_secure()):
+        return redirect(destination)
+    return redirect("questions:index")
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def profile(request):
-    return render_form_page(request, "core/profile.html", ProfileForm,
-                            initial={name: DEMO_USER[name] for name in ("username", "email", "nickname")},
-                            demo_profile=True)
+    instance = getattr(request.user, "profile", None) or Profile(user=request.user)
+    data = request.POST if request.method == "POST" else None
+    form = ProfileForm(data, request.FILES, user=request.user, instance=instance)
+    avatar_url = instance.avatar_url
+    # При ошибке показываем сохранённый аватар, а не ещё не записанный файл.
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Профиль сохранён.")
+        return redirect("core:profile")
+    return render(request, "core/profile.html", {"form": form, "avatar_url": avatar_url})
+
+
+def csrf_failure(request, reason=""):
+    match = request.resolver_match
+    if match and match.namespace == "questions" and match.url_name.startswith("ajax_"):
+        return JsonResponse({"error": "Сессия формы устарела. Обновите страницу и повторите действие."}, status=403)
+    return default_csrf_failure(request, reason=reason)

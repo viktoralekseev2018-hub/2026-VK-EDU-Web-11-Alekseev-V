@@ -1,4 +1,4 @@
-"""Настройки учебного проекта. PostgreSQL для локального запуска и Docker."""
+"""Настройки учебного проекта для локального запуска и Docker."""
 import os
 from pathlib import Path
 
@@ -66,8 +66,19 @@ if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
     INTERNAL_IPS = ["127.0.0.1", "::1"]
-    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": "debug_toolbar.middleware.show_toolbar_with_docker"}
-AUTH_PASSWORD_VALIDATORS = []
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": "debug_toolbar.middleware.show_toolbar_with_docker",
+        "SHOW_COLLAPSED": True,
+    }
+LOGIN_URL = "core:login"
+LOGIN_REDIRECT_URL = "questions:index"
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 LANGUAGE_CODE = "ru-ru"
 TIME_ZONE = "Europe/Moscow"
