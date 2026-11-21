@@ -1,77 +1,84 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.validators import FileExtensionValidator
+from django.db import transaction
+
+from .models import Profile
+
+User = get_user_model()
 
 
-class BootstrapForm(forms.Form):
-    """Общее оформление полей для всех форм сайта."""
-
+class BootstrapFields:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs["class"] = "form-control"
             field.widget.attrs["aria-describedby"] = f"id_{name}_help id_{name}_errors"
-            if getattr(field, "min_length", None):
-                field.widget.attrs["minlength"] = field.min_length
-        if self.is_bound:
-            for name in self.errors:
-                if name in self.fields:
-                    self.fields[name].widget.attrs.update({
-                        "class": "form-control is-invalid", "aria-invalid": "true"
-                    })
 
 
-class LoginForm(BootstrapForm):
-    email = forms.EmailField(label="Email", max_length=254,
-                             widget=forms.EmailInput(attrs={"autocomplete": "email"}))
-    password = forms.CharField(label="Пароль", min_length=8, max_length=128,
-                               help_text="От 8 до 128 символов.",
-                               widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+class LoginForm(BootstrapFields, AuthenticationForm):
+    username = forms.CharField(label="Логин", max_length=150, widget=forms.TextInput(
+        attrs={"autocomplete": "username", "autofocus": True},
+    ))
 
 
-class SignupForm(BootstrapForm):
-    username = forms.CharField(label="Логин", min_length=3, max_length=30,
-                               help_text="От 3 до 30 символов.",
-                               widget=forms.TextInput(attrs={"autocomplete": "username"}))
-    email = forms.EmailField(label="Email", max_length=254,
-                             widget=forms.EmailInput(attrs={"autocomplete": "email"}))
-    nickname = forms.CharField(label="Отображаемое имя", max_length=50,
-                               widget=forms.TextInput(attrs={"autocomplete": "nickname"}))
-    password = forms.CharField(label="Пароль", min_length=8, max_length=128,
-                               help_text="От 8 до 128 символов.",
-                               widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
-    password_repeat = forms.CharField(label="Повторите пароль", min_length=8, max_length=128,
-                                      widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
-    avatar = forms.FileField(label="Аватар", required=False,
-                             help_text="Необязательно. JPG или PNG, до 2 МБ.",
-                             validators=[FileExtensionValidator(["jpg", "jpeg", "png"])],
-                             widget=forms.FileInput(attrs={"accept": "image/png,image/jpeg"}))
+class SignupForm(BootstrapFields, UserCreationForm):
+    email = forms.EmailField(label="Email", max_length=254)
+    first_name = forms.CharField(label="Имя", max_length=50)
 
-    def clean(self):
-        cleaned = super().clean()
-        if cleaned.get("password") and cleaned.get("password_repeat"):
-            if cleaned["password"] != cleaned["password_repeat"]:
-                self.add_error("password_repeat", "Пароли не совпадают.")
-        return cleaned
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "email", "first_name")
 
-    def clean_avatar(self):
-        avatar = self.cleaned_data.get("avatar")
-        if avatar and avatar.size > 2 * 1024 * 1024:
+    @transaction.atomic
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit:
+            Profile.objects.create(user=user, nickname=user.first_name)
+        return user
+
+
+class AvatarField(forms.ImageField):
+    def to_python(self, data):
+        if data and data.size > 2 * 1024 * 1024:
             raise forms.ValidationError("Файл должен быть не больше 2 МБ.")
-        return avatar
+        image = super().to_python(data)
+        if image and image.image.format not in {"JPEG", "PNG"}:
+            raise forms.ValidationError("Загрузите изображение в формате JPG или PNG.")
+        if image and max(image.image.size) > 4096:
+            raise forms.ValidationError("Ширина и высота аватара должны быть не больше 4096 пикселей.")
+        return image
 
 
-class ProfileForm(BootstrapForm):
-    username = forms.CharField(label="Логин", min_length=3, max_length=30,
-                               help_text="От 3 до 30 символов.")
+class ProfileForm(BootstrapFields, forms.ModelForm):
     email = forms.EmailField(label="Email", max_length=254)
     nickname = forms.CharField(label="Отображаемое имя", max_length=50)
-    avatar = forms.FileField(label="Изменить аватар", required=False,
-                             help_text="JPG или PNG, до 2 МБ. Пустое поле сохраняет текущий аватар.",
-                             validators=[FileExtensionValidator(["jpg", "jpeg", "png"])],
-                             widget=forms.FileInput(attrs={"accept": "image/png,image/jpeg"}))
+    avatar = AvatarField(
+        label="Аватар", required=False,
+        help_text="JPG или PNG, до 2 МБ. Пустое поле сохраняет текущий аватар.",
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png"])],
+        widget=forms.FileInput(attrs={"accept": "image/jpeg,image/png"}),
+    )
 
-    def clean_avatar(self):
-        avatar = self.cleaned_data.get("avatar")
-        if avatar and avatar.size > 2 * 1024 * 1024:
-            raise forms.ValidationError("Файл должен быть не больше 2 МБ.")
-        return avatar
+    class Meta:
+        model = Profile
+        fields = ("email", "nickname", "avatar")
+
+    def __init__(self, *args, user, **kwargs):
+        self.user = user
+        kwargs["initial"] = {
+            "email": user.email,
+            "nickname": kwargs["instance"].nickname or user.get_full_name() or user.get_username(),
+        }
+        super().__init__(*args, **kwargs)
+
+    @transaction.atomic
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        profile.user = self.user
+        if commit:
+            profile.save()
+            self.user.email = self.cleaned_data["email"]
+            self.user.save(update_fields=["email"])
+        return profile

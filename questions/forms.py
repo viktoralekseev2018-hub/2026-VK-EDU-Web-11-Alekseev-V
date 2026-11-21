@@ -1,9 +1,9 @@
 from django import forms
 
-from core.forms import BootstrapForm
+from core.forms import BootstrapFields
 
 
-class AskForm(BootstrapForm):
+class AskForm(BootstrapFields, forms.Form):
     title = forms.CharField(label="Заголовок", min_length=10, max_length=150,
                             help_text="От 10 до 150 символов.")
     text = forms.CharField(label="Текст вопроса", min_length=20, max_length=5000,
@@ -19,7 +19,7 @@ class AskForm(BootstrapForm):
         return tags
 
 
-class AnswerForm(BootstrapForm):
+class AnswerForm(BootstrapFields, forms.Form):
     text = forms.CharField(label="Текст ответа", min_length=10, max_length=5000,
                            help_text="От 10 до 5 000 символов.",
                            widget=forms.Textarea(attrs={"rows": 5}))

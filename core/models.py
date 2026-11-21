@@ -1,11 +1,23 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.templatetags.static import static
 
 
+def avatar_upload_path(instance, filename):
+    return f"avatars/{uuid4().hex}{Path(filename).suffix.lower()}"
+
+
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
-    avatar = models.FileField("Аватар", upload_to="avatars/", blank=True)
+    nickname = models.CharField("Отображаемое имя", max_length=50, blank=True)
+    avatar = models.ImageField(
+        "Аватар", upload_to=avatar_upload_path, blank=True,
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png"])],
+    )
 
     class Meta:
         verbose_name = "профиль"

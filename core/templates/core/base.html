@@ -13,6 +13,9 @@
 <body class="d-flex flex-column">
   {% include 'core/includes/header.html' %}
   <main class="container my-4 flex-grow-1">
+    {% for message in messages %}
+      <div class="alert alert-success" role="status">{{ message }}</div>
+    {% endfor %}
     <div class="row g-4">
       <section class="col-lg-9" aria-labelledby="page-title">
         {% block content %}{% endblock %}

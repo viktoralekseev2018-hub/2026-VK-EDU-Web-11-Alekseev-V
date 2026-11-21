@@ -2,9 +2,10 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET, require_http_methods
 
 from core.pagination import paginate
-from core.views import DEMO_MESSAGE, render_form_page
 from .forms import AnswerForm, AskForm
 from .models import Answer, Question, Tag
+
+DEMO_MESSAGE = "Форма проверена. Публикация пока не сохраняется."
 
 
 def question_list(request, queryset, template, **context):
@@ -40,4 +41,7 @@ def question(request, question_id):
 
 @require_http_methods(["GET", "POST"])
 def ask(request):
-    return render_form_page(request, "questions/ask.html", AskForm)
+    form = AskForm(request.POST if request.method == "POST" else None)
+    return render(request, "questions/ask.html", {
+        "form": form, "demo_message": DEMO_MESSAGE if form.is_valid() else "",
+    })
