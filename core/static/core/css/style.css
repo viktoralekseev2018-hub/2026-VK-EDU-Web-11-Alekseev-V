@@ -55,6 +55,12 @@ body {
   overflow-wrap: anywhere;
 }
 
+[data-vote-form] button[aria-pressed="true"] {
+  background-color: var(--bs-btn-color);
+  color: white;
+  opacity: 1;
+}
+
 [id^="answer-"]:target {
   border-color: var(--bs-primary);
 }

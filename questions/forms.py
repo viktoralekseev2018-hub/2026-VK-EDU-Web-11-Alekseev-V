@@ -51,3 +51,14 @@ class AnswerForm(BootstrapFields, forms.ModelForm):
         if commit:
             answer.save()
         return answer
+
+
+class VoteForm(forms.Form):
+    value = forms.TypedChoiceField(choices=[(-1, "Дизлайк"), (1, "Лайк")], coerce=int)
+
+
+class CorrectAnswerForm(forms.Form):
+    question_id = forms.IntegerField(min_value=1, max_value=2**63 - 1)
+    answer_id = forms.IntegerField(min_value=1, max_value=2**63 - 1)
+    selected = forms.TypedChoiceField(choices=[("0", "Снять"), ("1", "Отметить")],
+                                      coerce=lambda value: value == "1")

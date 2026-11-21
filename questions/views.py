@@ -17,30 +17,30 @@ def question_list(request, queryset, template, **context):
 
 @require_GET
 def index(request):
-    return question_list(request, Question.objects.newest(), "questions/index.html", list_mode="new")
+    return question_list(request, Question.objects.newest(request.user), "questions/index.html", list_mode="new")
 
 
 @require_GET
 def hot(request):
-    return question_list(request, Question.objects.popular(), "questions/hot.html", list_mode="hot")
+    return question_list(request, Question.objects.popular(request.user), "questions/hot.html", list_mode="hot")
 
 
 @require_GET
 def tag(request, tag):
     selected = get_object_or_404(Tag, name=tag)
-    return question_list(request, Question.objects.by_tag(selected), "questions/tag.html",
+    return question_list(request, Question.objects.by_tag(selected, request.user), "questions/tag.html",
                          tag_name=selected.name)
 
 
 def render_question(request, item, form):
-    answers = Answer.objects.for_question(item)
+    answers = Answer.objects.for_question(item, request.user)
     page = paginate(answers, request, per_page=ANSWERS_PER_PAGE)
     return render(request, "questions/question.html", {"question": item, "page_obj": page, "form": form})
 
 
 @login_required
 def submit_answer(request, question_id):
-    item = get_object_or_404(Question.objects.cards(), pk=question_id)
+    item = get_object_or_404(Question.objects.cards(request.user), pk=question_id)
     form = AnswerForm(request.POST)
     if form.is_valid():
         answer = form.save(question=item, author=request.user)
@@ -52,7 +52,7 @@ def submit_answer(request, question_id):
 def question(request, question_id):
     if request.method == "POST":
         return submit_answer(request, question_id)
-    item = get_object_or_404(Question.objects.cards(), pk=question_id)
+    item = get_object_or_404(Question.objects.cards(request.user), pk=question_id)
     return render_question(request, item, AnswerForm())
 
 

@@ -1,1 +1,11 @@
-<div class="border rounded text-center py-1 mt-2" aria-label="Количество лайков">♥ {{ item.rating }}</div>
+<form class="d-grid gap-1 mt-2" method="post" action="{{ vote_url }}" data-vote-form
+      aria-label="Оценка публикации" {% if not user.is_authenticated %}title="Войдите, чтобы оценить публикацию"{% endif %}>
+  {% csrf_token %}
+  <button class="btn btn-sm btn-outline-primary" name="value" value="1" type="submit" aria-label="Лайк"
+          aria-pressed="{% if item.my_vote == 1 %}true{% else %}false{% endif %}"
+          {% if not user.is_authenticated or item.my_vote == 1 %}disabled{% endif %}>▲</button>
+  <output class="border rounded text-center py-1" data-rating>{{ item.rating }}</output>
+  <button class="btn btn-sm btn-outline-danger" name="value" value="-1" type="submit" aria-label="Дизлайк"
+          aria-pressed="{% if item.my_vote == -1 %}true{% else %}false{% endif %}"
+          {% if not user.is_authenticated or item.my_vote == -1 %}disabled{% endif %}>▼</button>
+</form>

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="{% static 'core/css/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <script defer src="{% static 'core/js/bootstrap.bundle.min.js' %}"></script>
+  <script defer src="{% static 'questions/js/actions.js' %}"></script>
 </head>
 <body class="d-flex flex-column">
   {% include 'core/includes/header.html' %}
@@ -16,6 +17,7 @@
     {% for message in messages %}
       <div class="alert alert-success" role="status">{{ message }}</div>
     {% endfor %}
+    <div class="alert alert-danger position-fixed bottom-0 end-0 m-3 z-3" id="action-error" role="alert" hidden></div>
     <div class="row g-4">
       <section class="col-lg-9" aria-labelledby="page-title">
         {% block content %}{% endblock %}

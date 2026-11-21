@@ -72,6 +72,7 @@ if DEBUG:
     }
 LOGIN_URL = "core:login"
 LOGIN_REDIRECT_URL = "questions:index"
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

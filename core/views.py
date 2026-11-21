@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.contrib.auth import login as sign_in, logout as sign_out
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
+from django.views.csrf import csrf_failure as default_csrf_failure
 
 from .forms import LoginForm, ProfileForm, SignupForm
 from .models import Profile
@@ -47,3 +49,10 @@ def profile(request):
         messages.success(request, "Профиль сохранён.")
         return redirect("core:profile")
     return render(request, "core/profile.html", {"form": form, "avatar_url": avatar_url})
+
+
+def csrf_failure(request, reason=""):
+    match = request.resolver_match
+    if match and match.namespace == "questions" and match.url_name.startswith("ajax_"):
+        return JsonResponse({"error": "Сессия формы устарела. Обновите страницу и повторите действие."}, status=403)
+    return default_csrf_failure(request, reason=reason)
