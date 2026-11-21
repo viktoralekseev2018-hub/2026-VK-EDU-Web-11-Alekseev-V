@@ -1,89 +1,44 @@
-# AskSpace — ДЗ2
+# AskSpace · ДЗ3 · Этап 1
 
-Сайт вопросов и ответов на Django 5.2 и Bootstrap 5.3. Все стили, скрипты и изображения хранятся локально.
-
-## Локальный запуск
-
-Выполняйте команды в папке с `manage.py`.
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-.\.venv\Scripts\python.exe manage.py migrate
-.\.venv\Scripts\python.exe manage.py runserver
-```
-
-Linux / macOS:
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-cp .env.example .env
-.venv/bin/python manage.py migrate
-.venv/bin/python manage.py runserver
-```
-
-Откройте <http://127.0.0.1:8000/>. Для остановки нажмите Ctrl+C.
-
-В `.env.example` перечислены настройки: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`.
+Добавлены модели, миграции, PostgreSQL и админка. Публичные страницы показывают примеры из ДЗ2.
 
 ## Запуск через Docker Compose
 
-Установите и запустите Docker, затем выполните из корня проекта:
+В папке с `manage.py` создайте файлы окружения. Команда использует стандартную библиотеку Python и генерирует ключ Django и пароль базы.
 
-```sh
-docker compose up --build
+```console
+python init_env.py
+docker compose up --build -d
 ```
 
-Откройте <http://localhost:8000/>. Для остановки:
+Откройте [главную страницу](http://localhost:8000/). При первом запуске Django применит миграции. Создайте учётную запись администратора.
 
-```sh
-docker compose down
+```console
+docker compose exec web python manage.py createsuperuser
 ```
 
-При необходимости стандартные миграции можно применить в работающем контейнере:
+Админка доступна по адресу [/admin/](http://localhost:8000/admin/). Команда `docker compose down` останавливает сервисы. Именованный том `pg_data` сохраняет базу между запусками.
 
-```sh
-docker compose exec web python manage.py migrate
+## Локальный запуск
+
+Понадобятся Python 3.12 или 3.13 и PostgreSQL. Для запуска только базы через Compose выполните `docker compose up -d db` после создания файлов окружения. Если используете собственный PostgreSQL, создайте базу и пользователя с правом создания таблиц в этой базе, затем укажите их параметры в `.env.local`.
+
+```console
+python init_env.py
+python -m venv .venv
 ```
 
-Сервис `web` использует порт 8000. Код подключён через volume `.:/app`, а для `media/` выделен отдельный volume `media_data`. Если `.env` отсутствует, используются настройки локальной разработки по умолчанию.
+В Windows PowerShell активируйте окружение командой `.\.venv\Scripts\Activate.ps1`, а в Linux или macOS выполните `source .venv/bin/activate`. Затем запустите:
 
-## Страницы
+```console
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-| Адрес | Назначение |
-| --- | --- |
-| `/` | Новые вопросы |
-| `/hot/` | Популярные вопросы |
-| `/tag/python/` | Вопросы по тегу |
-| `/question/35/` | Вопрос с ответами |
-| `/ask/` | Создание вопроса |
-| `/login/` | Вход |
-| `/signup/` | Регистрация |
-| `/profile/` | Настройки профиля |
+Скрипт `init_env.py` выполняется один раз. В `.env.local` хост базы по умолчанию — `127.0.0.1`, в `.env.docker` — имя сервиса `db`. Оба файла исключены из Git и Docker-образа. Перечень переменных приведён в `.env.example`.
 
-Тег и номер вопроса меняются в адресе. Несуществующий вопрос возвращает 404, неизвестный тег — пустой список.
+## Проверка админки
 
-## Устройство проекта
-
-- `application/` — настройки Django и корневой `urls.py`.
-- `core/` — вход, регистрация, профиль, общий шаблон и функция пагинации.
-- `questions/` — вопросы, ответы, данные-заглушки и соответствующие страницы.
-- `core/static/` и `questions/static/` — исходная статика приложений.
-- `static/` в корне — результат команды `collectstatic`, исключён из Git.
-- `media/` — каталог для будущих пользовательских загрузок, исключён из Git.
-
-Шаблоны используют `extends` и `include`. Маршруты именованные; ссылки формируются через `url` и `reverse()`, пути к ресурсам — через `static`.
-
-## Данные и пагинация
-
-В `questions/data.py` находятся 6 разных вопросов. У вопросов 1 и 35 — по 5 ответов. В списках выводится по 3 записи на страницу.
-
-Примеры: `/?page=2` и `/question/35/?page=2#answers`. Общая функция `paginate(objects_list, request, per_page=10)` находится в `core/pagination.py`; views передают ей размер страницы 3. Некорректные номера страниц заменяются первой страницей с обработкой `PageNotAnInteger` и `EmptyPage`.
-
-Данные без сохранения в БД. Формы проверяют введённые значения, но не создают аккаунты, вопросы или ответы и не выполняют настоящий вход. Аватары не сохраняются. Состояния голосования и правильного ответа сбрасываются после перезагрузки.
-
-Версии зависимостей закреплены в `requirements.txt`.
+После входа в /admin/ доступны профили, вопросы, ответы, теги и оба вида лайков. Профиль редактируется также на странице пользователя, ответы — на странице вопроса.
