@@ -1,13 +1,13 @@
-"""Настройки учебного проекта. Данные страниц пока не хранятся в БД."""
+"""Настройки учебного проекта. PostgreSQL для локального запуска и Docker."""
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.local")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-local-homework-only-key")
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.getenv("DJANGO_DEBUG", "1").lower() in {"1", "true", "yes"}
 ALLOWED_HOSTS = [
     host.strip()
@@ -53,7 +53,20 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = "application.wsgi.application"
 ASGI_APPLICATION = "application.asgi.application"
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+DATABASES = {"default": {
+    "ENGINE": "django.db.backends.postgresql",
+    "NAME": os.environ["POSTGRES_DB"],
+    "USER": os.environ["POSTGRES_USER"],
+    "PASSWORD": os.environ["POSTGRES_PASSWORD"],
+    "HOST": os.environ["POSTGRES_HOST"],
+    "PORT": os.environ["POSTGRES_PORT"],
+}}
+
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    INTERNAL_IPS = ["127.0.0.1", "::1"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": "debug_toolbar.middleware.show_toolbar_with_docker"}
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = "ru-ru"

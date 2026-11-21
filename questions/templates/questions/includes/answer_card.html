@@ -1,15 +1,16 @@
 {% load static %}
+{% static 'core/img/avatar-1.svg' as default_avatar %}
 <article class="card mb-3">
   <div class="card-body d-flex align-items-start gap-3">
     <div class="question-user">
-      <img class="avatar rounded" src="{% static answer.author.avatar %}" alt="Аватар {{ answer.author.name }}">
+      <img class="avatar rounded" src="{{ answer.author.profile.avatar_url|default:default_avatar }}" alt="Аватар {{ answer.author.username }}">
       {% include 'questions/includes/vote.html' with item=answer %}
     </div>
     <div class="question-content flex-grow-1">
       <p>{{ answer.text }}</p>
-      <p class="small text-secondary">{{ answer.author.name }} · <time datetime="{{ answer.created_at|date:'c' }}">{{ answer.created_at|date:'d.m.Y H:i' }}</time></p>
+      <p class="small text-secondary">{{ answer.author.get_full_name|default:answer.author.username }} · <time datetime="{{ answer.created_at|date:'c' }}">{{ answer.created_at|date:'d.m.Y H:i' }}</time></p>
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="correct-{{ answer.id }}"{% if answer.is_correct %} checked{% endif %}>
+        <input class="form-check-input" type="checkbox" disabled id="correct-{{ answer.id }}"{% if answer.is_correct %} checked{% endif %}>
         <label class="form-check-label" for="correct-{{ answer.id }}">Правильный ответ</label>
       </div>
     </div>
